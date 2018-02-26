@@ -1,9 +1,10 @@
 const HydraPlugin = require('hydra-plugin');
 const kafka = require('kafka-node');
+const EventEmitter = require('events');
 
-class KafkaPlugin extends HydraPlugin {
+class KafkaConsumerGroupPlugin extends HydraPlugin {
   constructor() {
-    super('kafka-plugin');
+    super('kafka-consumer-group-plugin');
   }
 
   setConfig(hydraConfig) {
@@ -12,29 +13,28 @@ class KafkaPlugin extends HydraPlugin {
   }
 
   onServiceReady() {    
-    const Consumer = kafka.Consumer;
-    const Client = kafka.Client;
-    const client = new Client(this.opts.zookeeperHosts);
-    const subscribedTopics = this.opts.subscribedTopics;
-    //const options = { autoCommit: true};
-    let consumer = new Consumer(client, subscribedTopics, this.opts.options);
+    const ConsumerGroup = kafka.ConsumerGroup;
+    let kafkaConsumerGroupConfig = Object.assign({id: this.hydra.instanceID}, this.opts.consumerOptions);
+    let consumerGroup = new ConsumerGroup(kafkaConsumerGroupConfig, this.opts.subscribedTopics);
+    
+    consumerGroup.on('connect', function (err) {
+      console.log('Kafka Consumer Group Ready.');
+    });
 
-    consumer.on('message', function (message) {
-      console.log('Kafka Consumer Recieved Message:', message);
+    consumerGroup.on('message', function (message) {
+      console.log('Kafka Consumer Group Recieved Message:', message);
+      try {
+        this.emit('kafkaMessage', message);
+      } catch (error) {
+        this.emit('kafkaError', error);
+      }
     });
       
-    consumer.on('error', function (err) {
-      console.log('Kafka Consumer Recieved Error:', err);
+    consumerGroup.on('error', function (err) {
+      console.log('Kafka Consumer Group Error:', err);
     });
 
-    consumer.on('ready', function (err) {
-      console.log('Kafka Consumer Ready.');
-    });
-
-    consumer.on('close', function (err) {
-      console.log('Kafka Consumer Closed.');
-    });
   }
 }
 
-module.exports = KafkaPlugin;
+module.exports = KafkaConsumerGroupPlugin;

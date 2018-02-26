@@ -1,6 +1,6 @@
 const hydra = require("hydra");
-const KafkaPlugin = require("./index.js");
-hydra.use(new KafkaPlugin());
+const KafkaConsumerGroupPlugin = require("./index.js");
+hydra.use(new KafkaConsumerGroupPlugin());
 
 const exampleConfig = {
 	hydra: {
@@ -9,16 +9,17 @@ const exampleConfig = {
 		servicePort: 9999,
 		serviceType: "example",
 		serviceDescription: "Example for Hydra Kafka Plugin",
-		redis: "redis://localhost:6379/15",
-		plugins: {
-      "kafka-plugin": {
-        "zookeeperHosts": "54.89.13.155:22181,54.89.13.155:32181,54.89.13.155:42181",
-        "subscribedTopics": [
-          { topic: "test", partition:0 }
-        ],
-        "options": {
-          "autoCommit": true
-        }
+    redis: "redis://localhost:6379/15",
+    plugins: {
+      "kafka-consumer-group-plugin": {
+        "consumerOptions": {
+          host: "54.89.13.155:22181,54.89.13.155:32181,54.89.13.155:42181",
+          groupId: 'example-group',
+          sessionTimeout: 15000,
+          protocol: ['roundrobin'],
+          fromOffset: 'latest'
+        },
+        "subscribedTopics": ["test-topic"]
       }
     }
 	}
